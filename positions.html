@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Positions · TradeOff ($TRADEOFF)</title>
+<meta name="theme-color" content="#080A09">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="positions.html">
+<main id="main" class="wrap">
+  <div class="eyebrow"><i></i>Positions</div>
+  <h1 class="page-h">Your desk<span class="acc">.</span></h1>
+  <p class="page-sub">Your bags, what they're worth, what the pool would do to each one, and your open offers, all in one place.</p>
+
+  <!-- not connected -->
+  <div id="off">
+    <div class="pass">
+      <div class="pass-l">
+        <span class="lbl">No wallet</span>
+        <h2 class="h2" style="font-size:40px;margin:10px 0 10px">Your desk, one view.</h2>
+        <p class="muted" style="max-width:46ch;margin:0 0 24px">Connect a wallet to see what you hold and what it's worth, how hard each bag would hit its pool, your open offers, and the buy offers on your coins.</p>
+        <div class="row" style="flex-wrap:wrap"><button class="btn btn-sell btn-lg" id="connect" type="button">Connect wallet</button><a class="btn btn-lg" href="index.html">Browse the board</a></div>
+      </div>
+      <div class="pass-r" aria-hidden="true">
+        <div class="holo"></div>
+        <div class="row between" style="position:relative"><span class="lbl" style="color:var(--soft)">Desk pass</span><span class="mono dim" style="font-size:12px" id="passNo"></span></div>
+        <div style="position:relative">
+          <img src="logo.svg" alt="" width="56" height="56" style="border-radius:14px;margin-bottom:14px">
+          <div style="font-stretch:125%;font-weight:900;font-size:26px;letter-spacing:-.03em;line-height:1">Not issued</div>
+          <div class="mono dim" style="font-size:13px;margin-top:6px">holder · ••••…••••</div>
+        </div>
+        <div class="row between" style="position:relative"><span class="stamp" style="color:var(--sell)">Connect to issue</span><span class="mono dim" style="font-size:12px">TRADEOFF</span></div>
+      </div>
+    </div>
+    <div class="steps3">
+      <div><span class="n">1</span><b>Connect</b><span>Your address is your account. There's nothing to sign up for.</span></div>
+      <div><span class="n">2</span><b>See your bags</b><span>Every coin you hold, what it's worth, and what dumping it would cost.</span></div>
+      <div><span class="n">3</span><b>Trade it off</b><span>Name your price, or take one that's already on the board.</span></div>
+    </div>
+  </div>
+
+  <!-- connected -->
+  <div id="on" class="hide">
+    <div class="kpi4">
+      <div><span class="lbl">Wallet value</span><b id="pVal">–</b><span id="pValS">bags plus SOL</span></div>
+      <div><span class="lbl">SOL balance</span><b id="pSol">–</b><span id="pSolS"></span></div>
+      <div><span class="lbl">Bags</span><b id="pBags">–</b><span>coins with a balance</span></div>
+      <div><span class="lbl">Pool would take</span><b class="down" id="pCost">–</b><span>if every bag were dumped</span></div>
+    </div>
+
+    <section class="panel" aria-labelledby="bagsH">
+      <div class="panel-h"><div><h2 class="h2" id="bagsH">Your bags</h2><p class="sub">Sorted by value. "Dump cost" is what selling the whole bag into its pool would cost you; on TradeOff it's 0%.</p></div><button class="btn btn-sm" id="reload" type="button">Refresh</button></div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Coin</th><th class="num">Amount</th><th class="num">Value</th><th class="num">Pool</th><th class="num">Dump cost</th><th class="num">Chart hit</th><th></th></tr></thead><tbody id="bags"></tbody></table></div>
+      <div id="bagsEmpty"></div>
+    </section>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-top:20px">
+      <section class="panel"><div class="panel-h"><div><h2 class="h2" style="font-size:22px">Your open offers</h2><p class="sub">Offers and buy offers you've posted.</p></div></div><div id="mine"></div></section>
+      <section class="panel"><div class="panel-h"><div><h2 class="h2" style="font-size:22px">Buy offers on your coins</h2><p class="sub">Holders' bids you can sell into right now.</p></div></div><div class="empty" style="padding:22px"><p style="margin:0">No buy offers on your coins yet.</p></div></section>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  $('#connect').onclick = openWalletModal;
+  $('#passNo').textContent = ticketNo();
+  async function load() {
+    const on = !!wallet.pubkey;
+    $('#off').classList.toggle('hide', on); $('#on').classList.toggle('hide', !on);
+    if (!on) return;
+    $('#bags').innerHTML = Array.from({ length: 4 }, () => `<tr><td colspan="7"><div class="skel" style="height:22px"></div></td></tr>`).join('');
+    $('#bagsEmpty').innerHTML = '';
+    try {
+      const [toks, bal] = await Promise.all([walletTokens(wallet.pubkey), rpc.call('getBalance', [wallet.pubkey])]);
+      const sol = (bal?.value || 0) / 1e9; const solUsd = window.SOL_USD || (await loadSol())?.usd || 0;
+      $('#pSol').textContent = sol.toFixed(3); $('#pSolS').textContent = solUsd ? fmtUsd(sol * solUsd) : '';
+      const pairs = await dex.tokens(toks.map((t) => t.mint));
+      const rows = toks.map((t) => { const v = coinView(dex.best(pairs, t.mint)); const usd = (v?.usd || 0) * t.amount; const im = v?.liq && usd ? impact(v.liq, usd) : null; return { ...t, v, usd, im }; }).sort((a, b) => b.usd - a.usd);
+      const total = rows.reduce((s, r) => s + r.usd, 0) + sol * solUsd;
+      const cost = rows.reduce((s, r) => s + (r.im ? -r.usd * r.im.sellerGets / 100 : 0), 0);
+      $('#pVal').textContent = fmtUsd(total); $('#pBags').textContent = rows.length; $('#pCost').textContent = cost ? '−' + fmtUsd(cost) : '$0';
+      if (!rows.length) { $('#bags').innerHTML = ''; $('#bagsEmpty').innerHTML = '<div class="empty"><h3>No bags in this wallet</h3><p>When you hold coins they show up here with their dump cost.</p><a class="btn btn-sm btn-buy" href="index.html?side=buy">Post a buy offer</a></div>'; return; }
+      $('#bags').innerHTML = rows.map((r) => `<tr>
+        <td><div class="cell-coin">${coinImg({ ...(r.v || {}), addr: r.mint })}<div><b>${r.v ? '$' + esc(r.v.symbol) : short(r.mint)}</b><div class="mono dim" style="font-size:12px">${short(r.mint)}</div></div></div></td>
+        <td class="num">${fmtNum(r.amount)}</td>
+        <td class="num">${r.usd ? fmtUsd(r.usd) : '–'}</td>
+        <td class="num dim">${r.v?.liq ? fmtUsd(r.v.liq) : '–'}</td>
+        <td class="num ${r.im ? 'down' : 'dim'}">${r.im ? pct(r.im.sellerGets) : '–'}</td>
+        <td class="num ${r.im ? 'down' : 'dim'}">${r.im ? pct(r.im.chart) : '–'}</td>
+        <td style="text-align:right"><a class="btn btn-sm btn-sell" href="index.html?side=sell&coin=${r.mint}">Trade it off</a></td></tr>`).join('');
+    } catch {
+      $('#bags').innerHTML = ''; $('#bagsEmpty').innerHTML = '<div class="empty"><h3>Couldn\'t read your wallet</h3><p>The Solana RPC didn\'t answer. Try again in a moment.</p></div>';
+    }
+    const mine = drafts.all().filter((d) => d.by === wallet.pubkey);
+    $('#mine').innerHTML = mine.length ? mine.map((d) => `<div class="offer" style="grid-template-columns:40px minmax(0,1fr) auto"><span class="ci" style="background:${d.img ? `center/cover url('${esc(d.img)}')` : avatar(d.coin)}"></span><div style="min-width:0"><b>${d.side === 'sell' ? 'Selling' : 'Buying'} ${fmtNum(d.amount)} $${esc(d.symbol)}</b><div class="mono dim" style="font-size:12.5px">${fmtPx(d.price)} SOL each</div></div><span class="chip ${d.side === 'sell' ? 'sell' : 'buy'}">Draft</span></div>`).join('')
+      : '<div class="empty" style="padding:22px"><p style="margin:0 0 12px">No open offers.</p><a class="btn btn-sm btn-sell" href="index.html">Post one</a></div>';
+  }
+  $('#reload').onclick = load;
+  document.addEventListener('to:wallet', load); load();
+});
+</script>
+</body>
+</html>

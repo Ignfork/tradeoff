@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradeOff ($TRADEOFF): the OTC desk for Solana bags</title>
+<meta name="description" content="Sell a bag straight to a buyer, or buy one straight from a holder. Coins and SOL swap in one transaction, so the chart never moves.">
+<meta name="theme-color" content="#080A09">
+<meta property="og:title" content="TradeOff ($TRADEOFF)">
+<meta property="og:description" content="Trade it off. The OTC desk for Solana bags. No deposit, no escrow, no pool.">
+<meta property="og:image" content="banner.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="index.html">
+<main id="main" class="wrap">
+
+  <section class="hero" aria-labelledby="heroH">
+    <div>
+      <div class="eyebrow"><i></i>OTC desk for Solana bags</div>
+      <h1 id="heroH"><span class="ln">Trade it</span><span class="ln acc">off.</span></h1>
+      <p class="lede">Your bag stays <b>in your hands</b> until a buyer takes it. Then coins and SOL swap in one transaction, and the chart never moves.</p>
+      <div class="nos"><span class="no"><i>✕</i>No deposit</span><span class="no"><i>✕</i>No escrow</span><span class="no"><i>✕</i>No pool</span></div>
+      <div class="ca" id="ca" style="margin-top:22px;max-width:560px"></div>
+    </div>
+    <div class="kpis" aria-label="Desk totals">
+      <div class="kpi"><span class="lbl">On the desk</span><b id="kDesk">0</b><span>nothing listed yet</span></div>
+      <div class="kpi"><span class="lbl">Buy offers</span><b id="kBuy">0</b><span>none yet</span></div>
+      <div class="kpi"><span class="lbl">Traded off</span><b id="kVol">0 SOL</b><span>no fills yet</span></div>
+      <div class="kpi"><span class="lbl">Chart impact</span><b class="up">0.00%<i class="spark"></i></b><span>every trade, by design</span></div>
+    </div>
+  </section>
+
+  <div class="desk">
+    <!-- ORDER SLIP -->
+    <form class="slip" id="slip" novalidate>
+      <div class="slip-top"><span class="lbl">Order slip</span><span class="slip-no" id="slipNo"></span></div>
+      <div class="sides" role="group" aria-label="Side">
+        <button type="button" data-side="sell" aria-pressed="true">Sell a bag</button>
+        <button type="button" data-side="buy" aria-pressed="false">Buy a bag</button>
+      </div>
+      <h2 id="slipH">Sell a bag</h2>
+      <p class="note" id="slipNote">Your coins stay in your wallet until a buyer takes them. You approve TradeOff for exactly this amount.</p>
+
+      <div class="field">
+        <span class="lbl"><span>Coin</span><span id="balLbl"></span></span>
+        <div class="inp-wrap" id="coinSelWrap"><span class="coin-ic" id="coinIc"></span><select id="coinSel" aria-label="Coin from your wallet" disabled><option>Connect your wallet first</option></select></div>
+        <div class="inp-wrap hide" id="coinPasteWrap"><span class="coin-ic" id="coinIc2"></span><input id="coinPaste" placeholder="Paste a coin address" spellcheck="false" autocomplete="off" aria-label="Coin address"></div>
+        <span class="hint" id="coinHint"></span>
+      </div>
+
+      <div class="field">
+        <span class="lbl"><span>Amount</span><span id="amtWorth" class="mono" style="letter-spacing:0;text-transform:none"></span></span>
+        <div class="inp-wrap"><input id="amt" inputmode="decimal" placeholder="0" aria-label="Amount of coins"><span class="unit" id="amtUnit">COINS</span></div>
+        <div class="quick" id="amtQuick"><button type="button" data-p="25">25%</button><button type="button" data-p="50">50%</button><button type="button" data-p="75">75%</button><button type="button" data-p="100">Max</button></div>
+      </div>
+
+      <div class="field">
+        <span class="lbl"><span>Price per coin</span><span id="mktPx" class="mono" style="letter-spacing:0;text-transform:none"></span></span>
+        <div class="inp-wrap"><input id="px" inputmode="decimal" placeholder="0.00" aria-label="Price per coin in SOL"><span class="unit">SOL</span></div>
+        <div class="quick" id="pxQuick"><button type="button" data-d="0">Market</button><button type="button" data-d="-2">−2%</button><button type="button" data-d="-5">−5%</button><button type="button" data-d="-10">−10%</button></div>
+        <span class="hint" id="pxHint"></span>
+      </div>
+
+      <label class="toggle"><span><b id="splitL">Split the bag</b><small id="splitS">Let buyers take pieces instead of the whole bag.</small></span><input type="checkbox" id="split" class="sr"><span class="sw" aria-hidden="true"></span></label>
+
+      <div class="field">
+        <span class="lbl">Open for</span>
+        <div class="quick" id="exp"><button type="button" data-h="1">1 hour</button><button type="button" data-h="24" aria-pressed="true">1 day</button><button type="button" data-h="72">3 days</button><button type="button" data-h="168">7 days</button></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="only"><span id="onlyL">Only this buyer</span><span>Optional</span></label>
+        <input class="inp" id="only" placeholder="Wallet address, for a private offer" spellcheck="false" autocomplete="off">
+        <span class="hint" id="onlyHint"></span>
+      </div>
+
+      <div class="vs" aria-live="polite">
+        <div class="vs-h"><span class="lbl">Against the pool</span><span class="chip n" id="vsPool">no coin</span></div>
+        <div id="vsBody"><div class="vs-empty">Pick a coin and an amount to see what the pool would do to it.</div></div>
+      </div>
+
+      <div class="sum">
+        <div class="sum-row"><span class="muted" id="sumL1">You receive</span><b id="sum1">0 SOL</b></div>
+        <div class="sum-row"><span class="muted">Offer deposit <span class="dim">(refunded)</span></span><b id="sumDep"></b></div>
+        <div class="sum-row" id="apprRow"><span class="muted">Approval record <span class="dim">(once per coin)</span></span><b id="sumAppr"></b></div>
+        <div class="sum-row"><span class="muted" id="sumFeeL">Taker pays</span><b id="sumFee">0.5% fee</b></div>
+        <button class="btn btn-sell btn-lg btn-block" id="postBtn" type="submit" style="margin-top:14px">Post offer</button>
+        <p class="hint" id="postHint" style="text-align:center;margin:10px 0 0"></p>
+      </div>
+    </form>
+
+    <div class="stack" style="gap:24px">
+      <!-- BOARD -->
+      <section class="panel" aria-labelledby="boardH">
+        <div class="panel-h">
+          <div><h2 class="h2" id="boardH">The board</h2><p class="sub">Buy any bag straight from the seller's wallet. You pay the price plus a 0.5% fee.</p></div>
+          <button class="btn btn-sm" id="refresh" type="button">Refresh</button>
+        </div>
+        <label class="search"><span class="qi"></span><span class="sr">Search the board</span><input id="boardQ" placeholder="Search a coin or paste a contract address" spellcheck="false" autocomplete="off"></label>
+        <div class="utabs" role="group" aria-label="Board view" id="boardTabs">
+          <button type="button" data-t="sale" aria-pressed="true">Bags for sale<span class="ct">0</span></button>
+          <button type="button" data-t="bids" aria-pressed="false">Buy offers<span class="ct">0</span></button>
+          <button type="button" data-t="mine" aria-pressed="false">Mine<span class="ct" id="mineCt">0</span></button>
+        </div>
+        <div id="board"></div>
+      </section>
+
+      <!-- TAPE -->
+      <section class="panel" aria-labelledby="tapeH">
+        <div class="panel-h">
+          <div><h2 class="h2" id="tapeH">The tape</h2><p class="sub">Every trade, printed straight from the chain.</p></div>
+          <span class="live">LIVE</span>
+        </div>
+        <div class="tape-empty"><span class="stamp" style="margin-bottom:12px">Awaiting first fill</span><br>No trades yet. The first one prints here.</div>
+      </section>
+
+      <!-- WHY -->
+      <section class="panel" aria-labelledby="whyH">
+        <div class="panel-h"><div><h2 class="h2" id="whyH">Why not the pool?</h2><p class="sub">A $50K sale into a $500K pool. Same bag, two exits.</p></div><a class="link" href="docs.html#pool">The math →</a></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="padding:18px;border-radius:14px;background:rgba(248,113,113,.06);box-shadow:inset 0 0 0 1px rgba(248,113,113,.25)">
+            <span class="lbl">Dump into the pool</span>
+            <div class="mono down" style="font-size:34px;font-weight:700;margin:8px 0 2px" id="wPool">–</div>
+            <span class="muted" style="font-size:13.5px">chart move for every holder</span>
+          </div>
+          <div style="padding:18px;border-radius:14px;background:rgba(74,222,128,.06);box-shadow:inset 0 0 0 1px rgba(74,222,128,.25)">
+            <span class="lbl">Trade it off</span>
+            <div class="mono up" style="font-size:34px;font-weight:700;margin:8px 0 2px">0.00%</div>
+            <span class="muted" style="font-size:13.5px">chart move, any size</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  mountCA($('#ca'));
+  $('.qi').outerHTML = ICON.search;
+  $('#slipNo').textContent = ticketNo();
+  const w = impact(500000, 50000); $('#wPool').textContent = pct(w.chart);
+
+  const S = { side: 'sell', coin: null, view: null, bal: 0, check: null, hours: 24, tokens: [] };
+  const amt = $('#amt'), px = $('#px');
+
+  function setSide(side) {
+    S.side = side; const sell = side === 'sell';
+    $$('.sides button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.side === side));
+    $('#slip').classList.toggle('buy', !sell);
+    $('#slipH').textContent = sell ? 'Sell a bag' : 'Buy a bag';
+    $('#slipNote').textContent = sell ? 'Your coins stay in your wallet until a buyer takes them. You approve TradeOff for exactly this amount.' : 'Name your price for a coin. Your SOL is wrapped and stays in your wallet until a holder sells into your offer.';
+    $('#coinSelWrap').classList.toggle('hide', !sell); $('#coinPasteWrap').classList.toggle('hide', sell);
+    $('#amtQuick').classList.toggle('hide', !sell);
+    $('#splitL').textContent = sell ? 'Split the bag' : 'Let several holders fill it';
+    $('#splitS').textContent = sell ? 'Let buyers take pieces instead of the whole bag.' : 'Fill your offer from more than one seller.';
+    $('#onlyL').textContent = sell ? 'Only this buyer' : 'Only this seller';
+    $('#sumL1').textContent = sell ? 'You receive' : 'SOL set aside (wrapped)';
+    $('#sumFeeL').textContent = sell ? 'Buyer pays on top' : 'Seller pays on fill';
+    $('#apprRow').classList.toggle('hide', !sell);
+    $('#postBtn').className = 'btn btn-lg btn-block ' + (sell ? 'btn-sell' : 'btn-buy');
+    $('#postBtn').textContent = sell ? 'Post offer' : 'Post buy offer';
+    if (sell) { S.coin = $('#coinSel').value && isAddr($('#coinSel').value) ? $('#coinSel').value : null; } else { S.coin = isAddr($('#coinPaste').value) ? $('#coinPaste').value.trim() : null; }
+    loadCoin();
+  }
+  $$('.sides button').forEach((b) => b.addEventListener('click', () => setSide(b.dataset.side)));
+
+  // wallet coins for the sell side
+  async function loadWalletCoins() {
+    const sel = $('#coinSel');
+    if (!wallet.pubkey) { sel.disabled = true; sel.innerHTML = '<option>Connect your wallet first</option>'; $('#balLbl').textContent = ''; return; }
+    sel.disabled = true; sel.innerHTML = '<option>Reading your wallet…</option>';
+    try {
+      const toks = await walletTokens(wallet.pubkey);
+      const pairs = await dex.tokens(toks.map((t) => t.mint));
+      S.tokens = toks.map((t) => ({ ...t, view: coinView(dex.best(pairs, t.mint)) })).map((t) => ({ ...t, usd: (t.view?.usd || 0) * t.amount })).sort((a, b) => b.usd - a.usd);
+      if (!S.tokens.length) { sel.innerHTML = '<option>No coins in this wallet</option>'; return; }
+      sel.disabled = false;
+      sel.innerHTML = '<option value="">Pick a coin from your wallet</option>' + S.tokens.map((t) => `<option value="${t.mint}">${esc(t.view?.symbol ? '$' + t.view.symbol : short(t.mint))}  ·  ${fmtNum(t.amount)}${t.usd ? '  ·  ' + fmtUsd(t.usd) : ''}</option>`).join('');
+      const pre = qs('coin'); if (pre && S.tokens.some((t) => t.mint === pre)) { sel.value = pre; sel.dispatchEvent(new Event('change')); }
+    } catch { sel.innerHTML = '<option>Couldn\'t read your wallet. Try again.</option>'; }
+  }
+  $('#coinSel').addEventListener('change', (e) => { S.coin = isAddr(e.target.value) ? e.target.value : null; loadCoin(); });
+  let pt; $('#coinPaste').addEventListener('input', (e) => { clearTimeout(pt); pt = setTimeout(() => { const v = e.target.value.trim(); S.coin = isAddr(v) ? v : null; if (v && !isAddr(v)) $('#coinHint').innerHTML = '<span class="hint bad">That isn\'t a Solana address.</span>'; loadCoin(); }, 350); });
+
+  async function loadCoin() {
+    S.view = null; S.check = null; S.bal = 0;
+    $('#coinIc').style.background = ''; $('#coinIc2').style.background = '';
+    if (!S.coin) { $('#coinHint').innerHTML = ''; $('#mktPx').textContent = ''; $('#balLbl').textContent = ''; update(); return; }
+    const t = S.tokens.find((x) => x.mint === S.coin);
+    if (S.side === 'sell' && t) { S.bal = t.amount; $('#balLbl').textContent = 'Balance ' + fmtNum(t.amount); }
+    $('#coinHint').innerHTML = '<span class="hint">Checking the coin…</span>';
+    const [view, check] = await Promise.all([t?.view ? Promise.resolve(t.view) : dex.coin(S.coin).then(coinView), mintCheck(S.coin).catch(() => null)]);
+    S.view = view; S.check = check;
+    const ic = view?.img ? `center/cover url("${view.img}")` : avatar(S.coin);
+    $('#coinIc').style.background = ic; $('#coinIc2').style.background = ic;
+    const bits = [];
+    if (check && !check.ok) bits.push(`<span class="chip down">${esc(check.reason)}</span>`);
+    else {
+      if (view) bits.push(`<span class="chip n">$${esc(view.symbol)}</span>`);
+      if (check?.freezable) bits.push('<span class="chip gold">Freezable</span>');
+      else if (check) bits.push('<span class="chip up">Not freezable</span>');
+      if (!view) bits.push('<span class="chip n">No market price yet</span>');
+    }
+    $('#coinHint').innerHTML = `<span class="row" style="gap:6px;flex-wrap:wrap">${bits.join('')}</span>`;
+    $('#mktPx').textContent = view?.sol ? 'Market ' + fmtPx(view.sol) + ' SOL' : '';
+    if (view?.sol && !px.value) px.value = fmtPx(view.sol);
+    if (S.side === 'sell' && S.bal && !amt.value) amt.value = '';
+    update();
+  }
+
+  $$('#amtQuick button').forEach((b) => b.addEventListener('click', () => {
+    if (!S.bal) { toast(wallet.pubkey ? 'Pick a coin from your wallet first.' : 'Connect your wallet first.', 'warn'); return; }
+    const v = S.bal * Number(b.dataset.p) / 100; amt.value = v >= 1000 ? Math.floor(v) : +v.toFixed(4); update();
+  }));
+  $$('#pxQuick button').forEach((b) => b.addEventListener('click', () => {
+    if (!S.view?.sol) { toast('No market price for this coin yet. Type your own.', 'warn'); return; }
+    px.value = fmtPx(S.view.sol * (1 + Number(b.dataset.d) / 100)); update();
+  }));
+  $$('#exp button').forEach((b) => b.addEventListener('click', () => { $$('#exp button').forEach((x) => x.setAttribute('aria-pressed', x === b)); S.hours = Number(b.dataset.h); }));
+  [amt, px].forEach((el) => el.addEventListener('input', () => { el.value = el.value.replace(/[^0-9.,]/g, ''); update(); }));
+  $('#only').addEventListener('input', update); $('#split').addEventListener('change', update);
+
+  function update() {
+    const sell = S.side === 'sell';
+    const a = num(amt.value), p = num(px.value);
+    const totalSol = a * p; const sol = window.SOL_USD || 0;
+    $('#amtUnit').textContent = S.view?.symbol ? ('$' + S.view.symbol).slice(0, 10) : 'COINS';
+    $('#amtWorth').textContent = totalSol ? `≈ ${fmtSol(totalSol)}${sol ? '  ·  ' + fmtUsd(totalSol * sol) : ''}` : '';
+    // deviation
+    const ph = $('#pxHint');
+    if (p && S.view?.sol) {
+      const dv = (p / S.view.sol - 1) * 100;
+      const txt = Math.abs(dv) < 0.05 ? 'At market' : `${Math.abs(dv).toFixed(1)}% ${dv < 0 ? 'under' : 'over'} market`;
+      ph.className = 'hint ' + (Math.abs(dv) > 30 ? 'warn' : 'good');
+      ph.textContent = Math.abs(dv) > 30 ? `${txt}. That's more than 30% off. Double-check before posting.` : txt;
+    } else ph.textContent = '';
+    // against the pool
+    const v = S.view; const sizeUsd = totalSol * sol || (v ? a * v.usd : 0);
+    $('#vsPool').textContent = v ? `${v.dex || 'pool'} · ${fmtUsd(v.liq)} liq` : 'no coin';
+    if (v && v.liq && sizeUsd > 0) {
+      const im = impact(v.liq, sizeUsd);
+      const dv = p && v.sol ? (p / v.sol - 1) * 100 : 0;
+      if (sell) {
+        const edge = dv - im.sellerGets;
+        $('#vsBody').innerHTML = `
+          <div class="vs-row"><span>Dump it: you'd get</span><span class="dim mono">${fmtUsd(sizeUsd * (1 + im.sellerGets / 100))}</span><b class="down">${pct(im.sellerGets)}</b></div>
+          <div class="vs-row"><span>Chart moves for every holder</span><span></span><b class="down">${pct(im.chart)}</b></div>
+          <div class="vs-row"><span>On TradeOff at your price</span><span class="dim mono">${fmtUsd(sizeUsd)}</span><b class="${dv >= 0 ? 'up' : 'goldc'}">${pct(dv)}</b></div>
+          <div class="vs-row"><span><b style="font-family:var(--font);text-align:left">${edge >= 0 ? 'Beats dumping by' : 'Worse than dumping by'}</b></span><span></span><b class="${edge >= 0 ? 'up' : 'down'}">${Math.abs(edge).toFixed(2)}%</b></div>`;
+      } else {
+        const edge = im.buyerPays - dv;
+        $('#vsBody').innerHTML = `
+          <div class="vs-row"><span>Buy from the pool: you'd pay</span><span></span><b class="down">+${im.buyerPays.toFixed(2)}%</b></div>
+          <div class="vs-row"><span>Chart pumps, then you hold the top</span><span></span><b class="goldc">${pct(im.chartUp)}</b></div>
+          <div class="vs-row"><span>On TradeOff at your price</span><span></span><b class="${dv <= 0 ? 'up' : 'goldc'}">${pct(dv)}</b></div>
+          <div class="vs-row"><span><b style="font-family:var(--font);text-align:left">${edge >= 0 ? 'Cheaper than the pool by' : 'Pricier than the pool by'}</b></span><span></span><b class="${edge >= 0 ? 'up' : 'down'}">${Math.abs(edge).toFixed(2)}%</b></div>`;
+      }
+    } else $('#vsBody').innerHTML = `<div class="vs-empty">${v && !v.liq ? 'No pool liquidity found for this coin.' : 'Pick a coin and an amount to see what the pool would do to it.'}</div>`;
+    // summary
+    $('#sum1').textContent = fmtSol(totalSol || 0);
+    $('#sumDep').textContent = '~' + CONFIG.offerDeposit + ' SOL';
+    $('#sumAppr').textContent = '~' + CONFIG.approvalRent + ' SOL';
+    $('#sumFee').textContent = totalSol ? `${fmtSol(totalSol * CONFIG.takerFee, 6)} (0.5%)` : '0.5% fee';
+    // only-this-wallet
+    const o = $('#only').value.trim(); const oh = $('#onlyHint');
+    oh.className = o ? (isAddr(o) ? 'hint good' : 'hint bad') : 'hint'; oh.textContent = o ? (isAddr(o) ? 'Private: only this wallet can take it, and it stays off the public board.' : 'Not a Solana address.') : '';
+    // button state
+    const issues = problems();
+    $('#postHint').textContent = !wallet.pubkey ? 'Connect a wallet to post.' : issues.length ? issues[0] : `${sell ? 'One approval' : 'One transaction'}, shown in your wallet before you sign.`;
+    $('#postHint').className = 'hint' + (wallet.pubkey && issues.length ? ' warn' : '');
+  }
+  function problems() {
+    const sell = S.side === 'sell', out = [], a = num(amt.value), p = num(px.value);
+    if (!S.coin) out.push(sell ? 'Pick a coin from your wallet.' : 'Paste the coin you want to buy.');
+    else if (S.check && !S.check.ok) out.push(S.check.reason);
+    if (!(a > 0)) out.push('Enter an amount.');
+    else if (sell && S.bal && a > S.bal + 1e-9) out.push(`You only hold ${fmtNum(S.bal)}.`);
+    if (!(p > 0)) out.push('Set a price per coin.');
+    const o = $('#only').value.trim(); if (o && !isAddr(o)) out.push('Fix the private-offer address or clear it.');
+    return out;
+  }
+
+  $('#slip').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!needWallet('Connect a wallet to post an offer.')) return;
+    const issues = problems(); if (issues.length) { toast(issues[0], 'warn'); return; }
+    drafts.add({ side: S.side, coin: S.coin, symbol: S.view?.symbol || short(S.coin), img: S.view?.img || '', amount: num(amt.value), price: num(px.value), split: $('#split').checked, hours: S.hours, only: $('#only').value.trim() || null, by: wallet.pubkey });
+    drawBoard(); setTab('mine');
+    toast(`The desk opens when ${CONFIG.ticker} launches. Your ${S.side === 'sell' ? 'offer' : 'buy offer'} is saved under Mine, ready to post.`, 'warn');
+  });
+
+  // board
+  let tab = 'sale';
+  function setTab(t) { tab = t; $$('#boardTabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.t === t)); drawBoard(); }
+  $$('#boardTabs button').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.t)));
+  function drawBoard() {
+    const q = $('#boardQ').value.trim().toLowerCase();
+    const mine = drafts.all().filter((d) => !wallet.pubkey || d.by === wallet.pubkey);
+    $('#mineCt').textContent = mine.length;
+    if (tab === 'mine') {
+      const list = mine.filter((d) => !q || d.coin.toLowerCase().includes(q) || (d.symbol || '').toLowerCase().includes(q));
+      $('#board').innerHTML = list.length ? list.map((d) => `<div class="offer"><span class="ci" style="background:${d.img ? `center/cover url('${esc(d.img)}')` : avatar(d.coin)}"></span>
+        <div style="min-width:0"><b>${d.side === 'sell' ? 'Selling' : 'Buying'} ${fmtNum(d.amount)} $${esc(d.symbol)}</b><div class="mono dim" style="font-size:12.5px">${fmtPx(d.price)} SOL each · ${fmtSol(d.amount * d.price)} · ${d.hours < 24 ? d.hours + 'h' : d.hours / 24 + 'd'}${d.only ? ' · private' : ''}</div></div>
+        <span class="chip ${d.side === 'sell' ? 'sell' : 'buy'}">Draft</span><button class="btn btn-sm" data-del="${d.id}" type="button">Remove</button></div>`).join('')
+        : `<div class="empty"><h3>Nothing of yours yet</h3><p>Fill in the order slip and your offers show up here.</p></div>`;
+      $$('[data-del]').forEach((b) => b.addEventListener('click', () => { drafts.remove(b.dataset.del); drawBoard(); }));
+      return;
+    }
+    const copy = tab === 'sale' ? ['No bags for sale yet', 'Post the first one with the order slip.'] : ['No buy offers yet', 'Name your price on any coin and holders can sell into it.'];
+    $('#board').innerHTML = q && isAddr(q) ? `<div class="empty"><h3>No offers on this coin yet</h3><p>Be the first to sell or buy it.</p><a class="btn btn-sm btn-sell" href="markets.html?coin=${encodeURIComponent($('#boardQ').value.trim())}">Open its market</a></div>`
+      : `<div class="empty"><h3>${copy[0]}</h3><p>${copy[1]}</p></div>`;
+  }
+  $('#boardQ').addEventListener('input', drawBoard);
+  $('#refresh').addEventListener('click', () => { drawBoard(); toast('Board is up to date.', 'ok'); });
+
+  document.addEventListener('to:wallet', () => { loadWalletCoins(); drawBoard(); update(); });
+  document.addEventListener('to:sol', update);
+  const side = qs('side'); const pre = qs('coin');
+  if (side === 'buy') { setSide('buy'); if (pre && isAddr(pre)) { $('#coinPaste').value = pre; S.coin = pre; loadCoin(); } } else setSide('sell');
+  if (pre && side !== 'buy') $('#slip').scrollIntoView({ block: 'start' });
+  loadWalletCoins(); drawBoard();
+});
+</script>
+</body>
+</html>

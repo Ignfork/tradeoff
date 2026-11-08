@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Docs · TradeOff ($TRADEOFF)</title>
+<meta name="description" content="How TradeOff works: offers, buy offers, private offers, what you approve, fees, risks and the $TRADEOFF coin.">
+<meta name="theme-color" content="#080A09">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="docs.html">
+<main id="main" class="wrap">
+  <div class="eyebrow"><i></i>Docs</div>
+  <h1 class="page-h">How it works<span class="acc">.</span></h1>
+  <p class="page-sub">Everything TradeOff does, what you sign, what it costs, and who you're trusting.</p>
+
+  <div class="docs">
+    <nav class="toc" aria-label="On this page">
+      <a href="#what">What TradeOff is</a><a href="#pool">Why not the pool</a><a href="#offers">Offer types</a><a href="#pricing">Pricing an offer</a><a href="#approve">What you approve</a><a href="#funds">Where funds sit</a><a href="#fees">Fees and deposits</a><a href="#trust">Who you're trusting</a><a href="#risks">Risks</a><a href="#token">$TRADEOFF</a><a href="#faq">FAQ</a>
+    </nav>
+
+    <article class="prose">
+      <section id="what">
+        <h2>What TradeOff is</h2>
+        <p>TradeOff is a place to sell a bag of any Solana coin straight to a buyer, or buy one straight from a holder. One side posts an offer. When the other side takes it, the coins and the SOL swap in one transaction: both move, or nothing does.</p>
+        <p>No pool is involved, so the coin's price on the charts doesn't move. A big holder can exit without dragging the price down on everyone who's still holding.</p>
+        <div class="panel" style="margin-top:18px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;background:rgba(134,239,172,.05);border-color:rgba(134,239,172,.25)"><span class="chip gold">Status</span><p style="margin:0;font-size:14.5px">The on-chain desk goes live with $TRADEOFF. Markets, Positions and the pool calculators work now. Until launch, the order slip saves your offers as drafts so they're ready to post.</p></div>
+      </section>
+
+      <section id="pool">
+        <h2>Why not the pool</h2>
+        <p>A pool prices each trade on a curve, so a sale that's large next to the pool fills worse the bigger it gets, and leaves the price lower for everyone. We model a pool as constant product with half its liquidity on each side. Selling D dollars into a side holding R gets an average of R / (R + D) of the market price, and leaves the price at the square of that.</p>
+        <table class="dtbl"><thead><tr><th>Sale into a $2M pool</th><th>Seller gets</th><th>Chart moves</th><th>On TradeOff</th></tr></thead>
+          <tbody>
+            <tr><td class="num">$10K</td><td class="num down">−1.0%</td><td class="num down">−2.0%</td><td class="num up">0.0%</td></tr>
+            <tr><td class="num">$50K</td><td class="num down">−4.8%</td><td class="num down">−9.3%</td><td class="num up">0.0%</td></tr>
+            <tr><td class="num">$100K</td><td class="num down">−9.1%</td><td class="num down">−17.4%</td><td class="num up">0.0%</td></tr>
+            <tr><td class="num">$250K</td><td class="num down">−20.0%</td><td class="num down">−36.0%</td><td class="num up">0.0%</td></tr>
+            <tr><td class="num">$500K</td><td class="num down">−33.3%</td><td class="num down">−55.6%</td><td class="num up">0.0%</td></tr>
+          </tbody></table>
+        <p style="margin-top:14px">Those are two different costs. "Seller gets" is what the seller loses to slippage. "Chart moves" is what every other holder sees. Real liquidity is spread across several pools and curves, so treat both as estimates. The order slip shows the same comparison for your exact size, and the <a href="markets.html" style="text-decoration:underline">dump calculator</a> lets you try any pool.</p>
+      </section>
+
+      <section id="offers">
+        <h2>Offers, buy offers, private offers</h2>
+        <h3>An offer (selling)</h3><p>You list coins you hold for a price in SOL. The page checks your balance first. Buyers can take the whole bag, or pieces if you turn on Split the bag.</p>
+        <h3>A buy offer</h3><p>You name a coin, an amount and a price. Anyone holding that coin can sell into it. Your SOL is wrapped and stays in your wallet until they do.</p>
+        <h3>A private offer</h3><p>Either of the above, locked to one wallet. Only that wallet can take it, and it stays off the public board. Send them the offer's share link.</p>
+        <p>Offers stay open for an hour, a day, three days or seven days, and you can cancel any time before then. A split offer always takes everything that's left, or leaves at least one smallest split behind, so nobody gets stuck with a crumb.</p>
+      </section>
+
+      <section id="pricing">
+        <h2>Pricing an offer</h2>
+        <p>You set a price per coin. The slip shows the live market price next to it and how far yours sits from it, with quick buttons for market, −2%, −5% and −10%. If your price is more than 30% off the market, the slip warns you before you post.</p>
+        <p>A good deal beats the pool for both sides. A seller pricing a little under market still gets more than dumping would pay, and a buyer still pays less than buying up the pool would cost. The "Against the pool" panel shows both numbers for your exact size, and tells you by how much your price beats the pool.</p>
+      </section>
+
+      <section id="approve">
+        <h2>What you approve</h2>
+        <p>Posting an offer is one transaction. Your wallet shows what it does before you sign. For selling 40,000,000 of a coin, it looks like this:</p>
+        <code class="code">TradeOff: post an offer
+
+Program   published at launch
+Approve   40,000,000 COIN from your COIN account
+Delegate  TradeOff's program address
+Price     0.00007282 SOL per coin, 2,912.8 SOL total
+Takers    anyone · whole bag only
+Ends      in 1 day
+Deposit   ~0.0018 SOL, refunded when the offer closes</code>
+        <p style="margin-top:14px">The approval is the key part. It lets one TradeOff program address move up to that many of your coins, and the program only does that inside a trade that pays you your price in the same transaction. The approval always equals the total of your open offers on that coin. Cancel and it shrinks or disappears. You can also revoke it from your wallet any time.</p>
+      </section>
+
+      <section id="funds">
+        <h2>Where funds sit</h2>
+        <ul>
+          <li>Sellers' coins stay in the seller's own wallet until the moment of the trade.</li>
+          <li>Buyers' SOL for a buy offer is wrapped into wSOL and stays in the buyer's own wallet until a holder sells into it.</li>
+          <li>The only thing TradeOff stores is the offer record: the terms, what's left, and when it ends. It holds no coins and no SOL.</li>
+        </ul>
+      </section>
+
+      <section id="fees">
+        <h2>Fees and deposits</h2>
+        <table class="dtbl"><tbody>
+          <tr><td>Taking an offer (buying a bag, or selling into a buy offer)</td><td class="num">0.5%</td></tr>
+          <tr><td>Posting an offer</td><td class="num">0</td></tr>
+          <tr><td>Offer deposit, returned when it fills, is cancelled or expires</td><td class="num">~0.0018 SOL</td></tr>
+          <tr><td>Approval record, once per coin you sell</td><td class="num">~0.0011 SOL</td></tr>
+          <tr><td>Solana network fees</td><td class="num">&lt;0.0001 SOL</td></tr>
+        </tbody></table>
+        <p style="margin-top:14px">The 0.5% is taken from the SOL side of each trade and goes to TradeOff's fee wallet. The address is built into the program and can't be changed without a new program.</p>
+      </section>
+
+      <section id="trust">
+        <h2>Who you're trusting</h2>
+        <h3>The program</h3><p>Every rule is enforced by code on Solana: the price, the size, the expiry, who can take a private offer, and that both sides move together. There's no admin key that can touch offers or redirect fees.</p>
+        <h3>Whoever holds the upgrade key</h3><p>A Solana program can be upgraded or closed by its upgrade key. We'll publish who holds it at launch, and say here if it moves to a multisig or gets locked for good.</p>
+        <h3>Solana and your wallet</h3><p>Same as any app on Solana.</p>
+      </section>
+
+      <section id="risks">
+        <h2>Risks</h2>
+        <h3>Audit status</h3><p>We'll publish the program's audit status at launch. Until a program has an outside audit, start with amounts you're comfortable with.</p>
+        <h3>Coins carry their own risk</h3><p>Some coins let their creator freeze wallets. TradeOff marks those Freezable. Coins with transfer fees, transfer hooks or a permanent delegate are refused outright. The slip checks this the moment you pick a coin.</p>
+        <h3>Your price doesn't follow the market</h3><p>An open offer sells at the price you set even if the market moves. Use shorter expiries, or cancel and repost.</p>
+        <h3>One approval per coin account</h3><p>A coin account can only have one approved app at a time. Posting on TradeOff replaces another app's approval on that coin.</p>
+        <h3>Pool figures are estimates</h3><p>The "against the pool" numbers come from total pool liquidity. Real pools can be thinner or deeper.</p>
+      </section>
+
+      <section id="token">
+        <h2>$TRADEOFF</h2>
+        <p>$TRADEOFF is the TradeOff project coin, launched as a fair launch on pump.fun: no presale and no team allocation, with pump.fun's standard setup.</p>
+        <table class="dtbl"><tbody>
+          <tr><td>Total supply</td><td class="num">1,000,000,000</td></tr>
+          <tr><td>Decimals</td><td class="num">6</td></tr>
+          <tr><td>Mint and freeze authority</td><td>Revoked at creation</td></tr>
+          <tr><td>Launch</td><td>pump.fun bonding curve, migrates to PumpSwap when the curve completes</td></tr>
+          <tr><td>Pair</td><td>SOL</td></tr>
+          <tr><td>Presale or team allocation</td><td>None. Any dev buy is public on-chain</td></tr>
+        </tbody></table>
+        <div class="ca" id="ca" style="margin-top:16px"></div>
+        <p style="margin-top:14px">The contract address is posted on our X account first. Anything posted elsewhere before that isn't us. Always check the CA before you buy.</p>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <details class="faq"><summary>Does TradeOff hold my coins or SOL?</summary><p>No. Coins stay in the seller's wallet and SOL stays wrapped in the buyer's wallet until the moment of the trade. TradeOff only stores the offer record.</p></details>
+        <details class="faq"><summary>Can TradeOff take my coins?</summary><p>The approval only lets the program move your coins inside a trade that pays you your price in the same transaction, and never more than your open offers. You can revoke it any time.</p></details>
+        <details class="faq"><summary>What if the price changes while I'm buying?</summary><p>You pay the price on the offer, not the market price. If the seller cancels first, the transaction fails and nothing moves.</p></details>
+        <details class="faq"><summary>Which coins work?</summary><p>Any standard Solana coin. Coins with transfer fees, transfer hooks or a permanent delegate are refused. Freezable coins work but are marked.</p></details>
+        <details class="faq"><summary>Why not just sell on the pool?</summary><p>Because a big sale fills worse the bigger it is, and drops the chart for every holder. On TradeOff the price is whatever you and the buyer agree, and the chart doesn't move.</p></details>
+        <details class="faq"><summary>Where are my draft offers stored?</summary><p>In this browser, until the on-chain desk is live. Nothing is sent anywhere.</p></details>
+      </section>
+    </article>
+  </div>
+</main>
+<script src="app.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => mountCA($('#ca')));</script>
+</body>
+</html>

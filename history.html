@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>History · TradeOff ($TRADEOFF)</title>
+<meta name="theme-color" content="#080A09">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="history.html">
+<main id="main" class="wrap">
+  <div class="row between" style="align-items:flex-end;flex-wrap:wrap;gap:16px">
+    <div>
+      <div class="eyebrow"><i></i>Read straight from the chain</div>
+      <h1 class="page-h">The ledger<span class="acc">.</span></h1>
+      <p class="page-sub" style="margin-bottom:30px">Every public offer posted on TradeOff and how it ended, each fill tied to its transaction.</p>
+    </div>
+    <a class="btn btn-sell" href="index.html" style="margin-bottom:30px">Live offers →</a>
+  </div>
+
+  <div class="kpi4">
+    <div><span class="lbl">Offers posted</span><b>0</b><span>0 sales · 0 buy offers</span></div>
+    <div><span class="lbl">Settled volume</span><b>0 SOL</b><span id="usdV">≈ $0.00</span></div>
+    <div><span class="lbl">Fills</span><b class="goldc">0</b><span>nothing closed yet</span></div>
+    <div><span class="lbl">Still open</span><b>0</b><span>nothing live</span></div>
+  </div>
+
+  <section class="panel">
+    <div class="filters">
+      <div class="pills" role="group" aria-label="Status" id="st">
+        <button type="button" aria-pressed="true" data-v="all">ALL<span class="ct">0</span></button>
+        <button type="button" aria-pressed="false" data-v="open">OPEN<span class="ct">0</span></button>
+        <button type="button" aria-pressed="false" data-v="filled">FILLED<span class="ct">0</span></button>
+        <button type="button" aria-pressed="false" data-v="cancelled">CANCELLED<span class="ct">0</span></button>
+        <button type="button" aria-pressed="false" data-v="expired">EXPIRED<span class="ct">0</span></button>
+      </div>
+      <div class="pills" role="group" aria-label="Side" id="sd">
+        <button type="button" aria-pressed="true" data-v="both">BOTH SIDES</button>
+        <button type="button" aria-pressed="false" data-v="sell">SALES</button>
+        <button type="button" aria-pressed="false" data-v="buy">BUY OFFERS</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Coin</th><th>Side</th><th class="num">Size</th><th class="num">Price</th><th>Status</th><th class="num">Tx</th></tr></thead><tbody></tbody></table></div>
+    <div class="empty" style="margin-top:6px;padding:46px 22px"><span class="stamp big" style="margin-bottom:16px">Clean ledger</span><h3 id="emH">A clean ledger.</h3><p id="emP">No offers yet. The first one gets written here.</p><a class="btn btn-sell" href="index.html">Post the first offer</a></div>
+  </section>
+</main>
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const msg = { all: 'No offers yet. The first one gets written here.', open: 'Nothing open right now.', filled: 'No fills yet. The first one gets stamped here.', cancelled: 'Nothing cancelled.', expired: 'Nothing expired.' };
+  $$('#st button').forEach((b) => b.addEventListener('click', () => { $$('#st button').forEach((x) => x.setAttribute('aria-pressed', x === b)); $('#emP').textContent = msg[b.dataset.v]; }));
+  $$('#sd button').forEach((b) => b.addEventListener('click', () => { $$('#sd button').forEach((x) => x.setAttribute('aria-pressed', x === b)); }));
+});
+</script>
+</body>
+</html>

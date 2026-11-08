@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Markets · TradeOff ($TRADEOFF)</title>
+<meta name="description" content="Live PumpSwap markets. Open any coin for its chart, see what a dump would do to it, and trade a bag off the pool.">
+<meta name="theme-color" content="#080A09">
+<meta property="og:image" content="banner.png">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="markets.html">
+<main id="main" class="wrap">
+  <div class="eyebrow"><i></i>Live PumpSwap markets</div>
+  <h1 class="page-h">Markets<span class="acc">.</span></h1>
+  <p class="page-sub">What's moving on PumpSwap right now. Open any coin for its chart, see what a dump would do to it, and trade off a bag without touching the pool.</p>
+
+  <form class="search" id="openForm" style="max-width:620px;margin-bottom:34px"><span class="qi"></span><label class="sr" for="openIn">Coin address</label><input id="openIn" placeholder="Paste any Solana coin address to open its market" spellcheck="false" autocomplete="off"><button class="btn btn-sm btn-sell" type="submit">Open</button></form>
+
+  <!-- COIN VIEW -->
+  <section class="cv hide" id="cv" aria-live="polite"></section>
+
+  <!-- SPOTLIGHT -->
+  <section aria-labelledby="spotH">
+    <div class="panel-h" style="align-items:flex-end;flex-wrap:wrap">
+      <div><span class="lbl">PumpSwap · 24h volume</span><h2 class="h2" id="spotH" style="font-size:40px;margin-top:6px">Spotlight.</h2><p class="sub">The coins moving the most volume through PumpSwap right now.</p></div>
+      <div class="pills" role="group" aria-label="Sort" id="sort">
+        <button type="button" data-s="vol" aria-pressed="true">Volume rank</button>
+        <button type="button" data-s="gain" aria-pressed="false">Top gainers 24h</button>
+        <button type="button" data-s="liq" aria-pressed="false">Deepest pool</button>
+        <button type="button" data-s="mcap" aria-pressed="false">Market cap</button>
+      </div>
+    </div>
+    <div class="mk-grid" id="grid"></div>
+    <div class="row between" style="margin-top:16px;flex-wrap:wrap">
+      <span class="hint" id="src">DexScreener · PumpSwap pairs with real volume and liquidity</span>
+      <div class="row"><span class="hint" id="upd">loading…</span><button class="btn btn-sm" id="more" type="button">Show more PumpSwap coins</button></div>
+    </div>
+  </section>
+
+  <!-- MOVERS -->
+  <section style="margin-top:64px" aria-labelledby="movH">
+    <div class="panel-h" style="align-items:flex-end;flex-wrap:wrap">
+      <div><span class="lbl">Picking up speed</span><h2 class="h2" id="movH" style="font-size:40px;margin-top:6px">Movers.</h2><p class="sub">Biggest moves among PumpSwap's busiest coins.</p></div>
+      <div class="row" style="flex-wrap:wrap">
+        <div class="pills" role="group" aria-label="Direction" id="dir"><button type="button" data-d="up" aria-pressed="true">Gainers</button><button type="button" data-d="down" aria-pressed="false">Losers</button></div>
+        <div class="pills" role="group" aria-label="Window" id="win"><button type="button" data-w="h1" aria-pressed="true">1H</button><button type="button" data-w="h24" aria-pressed="false">24H</button></div>
+      </div>
+    </div>
+    <div class="movers" id="movers"></div>
+  </section>
+
+  <!-- IMPACT CALCULATOR -->
+  <section class="panel" style="margin-top:64px;padding:30px" aria-labelledby="calcH">
+    <div class="calc">
+      <div>
+        <span class="lbl">Dump calculator</span>
+        <h2 class="h2" id="calcH" style="font-size:40px;margin:6px 0 8px">What would a dump do?</h2>
+        <p class="sub" style="margin-bottom:26px">Drag the pool and the sale size. This is what every holder sees on the chart when a bag hits the pool, and what the seller loses on the way out.</p>
+        <div class="field"><span class="lbl"><span>Pool liquidity</span><b class="mono" id="cLiqV" style="color:var(--text);letter-spacing:0">$500K</b></span><input type="range" class="rng" id="cLiq" min="0" max="100" value="55" aria-label="Pool liquidity"></div>
+        <div class="field"><span class="lbl"><span>Sale size</span><b class="mono" id="cSizeV" style="color:var(--text);letter-spacing:0">$50K</b></span><input type="range" class="rng" id="cSize" min="0" max="100" value="45" aria-label="Sale size"></div>
+      </div>
+      <div class="stack" style="gap:18px">
+        <div><span class="lbl">Chart moves</span><div class="bigpc down" id="cChart">–</div><div class="meter" style="margin-top:12px"><i id="cMeter"></i></div></div>
+        <div class="kvl panel" style="padding:6px 18px;background:rgba(0,0,0,.2)">
+          <div class="r"><span class="muted">Seller gets vs market</span><b class="down" id="cGets">–</b></div>
+          <div class="r"><span class="muted">Seller walks away with</span><b id="cWalk">–</b></div>
+          <div class="r"><span class="muted">On TradeOff, any size</span><b class="up">0.00%</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  $('.qi').outerHTML = ICON.search;
+  let DATA = [], sortBy = 'vol', shown = 20, dir = 'up', win = 'h1';
+
+  const card = (c, i) => `<a class="mk" href="?coin=${c.addr}" data-coin="${c.addr}">
+    <div class="mk-top"><span>${String(i + 1).padStart(2, '0')} / pumpswap</span><span class="${(c.ch24 ?? 0) >= 0 ? 'up' : 'down'}">${pct(c.ch24)} 24h</span></div>
+    <div class="mk-id">${coinImg(c)}<div style="min-width:0"><b>${esc(c.symbol)}</b><span>${esc(c.name)}</span></div></div>
+    <div class="mk-px"><b>$${fmtPx(c.usd)}</b></div>
+    <div class="mk-kv"><div><small>24h volume</small><b>${fmtUsd(c.vol24)}</b></div><div><small>Market cap</small><b>${fmtUsd(c.mcap)}</b></div></div>
+    <div class="mk-foot"><span class="mono">${short(c.addr)}</span><span class="go">Open market →</span></div></a>`;
+  const skel = () => Array.from({ length: 8 }, () => `<div class="mk"><div class="skel" style="height:12px;width:50%"></div><div class="row"><div class="skel" style="width:42px;height:42px;border-radius:50%"></div><div class="skel" style="height:16px;width:60%"></div></div><div class="skel" style="height:18px;width:40%"></div><div class="skel" style="height:34px"></div></div>`).join('');
+
+  function sorted() {
+    const l = [...DATA];
+    if (sortBy === 'gain') l.sort((a, b) => (b.ch24 ?? -1e9) - (a.ch24 ?? -1e9));
+    else if (sortBy === 'liq') l.sort((a, b) => b.liq - a.liq);
+    else if (sortBy === 'mcap') l.sort((a, b) => b.mcap - a.mcap);
+    else l.sort((a, b) => b.vol24 - a.vol24);
+    return l;
+  }
+  function drawGrid() {
+    if (!DATA.length) { $('#grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Markets didn't load</h3><p>DexScreener didn't answer. Check your connection and try again.</p><button class="btn btn-sm btn-sell" id="retry" type="button">Try again</button></div>`; $('#retry').onclick = () => load(true); $('#more').classList.add('hide'); return; }
+    const l = sorted();
+    $('#grid').innerHTML = l.slice(0, shown).map(card).join('');
+    $('#more').classList.toggle('hide', shown >= l.length);
+  }
+  function drawMovers() {
+    const base = [...DATA].filter((c) => c[win === 'h1' ? 'vol1' : 'vol24'] > (win === 'h1' ? 5000 : 50000)).filter((c) => (win === 'h1' ? c.ch1 : c.ch24) != null);
+    base.sort((a, b) => (dir === 'up' ? 1 : -1) * ((win === 'h1' ? b.ch1 : b.ch24) - (win === 'h1' ? a.ch1 : a.ch24)));
+    const l = base.filter((c) => (dir === 'up' ? (win === 'h1' ? c.ch1 : c.ch24) > 0 : (win === 'h1' ? c.ch1 : c.ch24) < 0)).slice(0, 6);
+    $('#movers').innerHTML = l.length ? l.map((c, i) => { const ch = win === 'h1' ? c.ch1 : c.ch24; const up = ch >= 0; return `<a class="mv" href="?coin=${c.addr}"><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="ar" style="background:${up ? 'rgba(74,222,128,.12)' : 'rgba(248,113,113,.12)'};color:${up ? 'var(--up)' : 'var(--down)'}">${up ? '↗' : '↘'}</span><b>${esc(c.symbol)}</b><span class="pc ${up ? 'up' : 'down'}">${pct(ch)}<small>${fmtUsd(win === 'h1' ? c.vol1 : c.vol24)} ${win === 'h1' ? '1h' : '24h'} vol</small></span></a>`; }).join('')
+      : `<div class="empty" style="grid-column:1/-1"><h3>${DATA.length ? 'No movers in this window' : 'Waiting for markets'}</h3><p>${DATA.length ? 'Try the other window or direction.' : 'Movers show once PumpSwap data loads.'}</p></div>`;
+  }
+  async function load(force) {
+    $('#grid').innerHTML = skel(); $('#upd').textContent = 'loading…';
+    const r = await loadPumpSwap(force);
+    DATA = r.list; drawGrid(); drawMovers();
+    $('#upd').textContent = DATA.length ? `${DATA.length} coins · updated ${ago(r.at) === '0s' ? 'just now' : ago(r.at) + ' ago'}` : 'not loaded';
+  }
+  $$('#sort button').forEach((b) => b.addEventListener('click', () => { $$('#sort button').forEach((x) => x.setAttribute('aria-pressed', x === b)); sortBy = b.dataset.s; drawGrid(); }));
+  $('#more').addEventListener('click', () => { shown += 20; drawGrid(); });
+  $$('#dir button').forEach((b) => b.addEventListener('click', () => { $$('#dir button').forEach((x) => x.setAttribute('aria-pressed', x === b)); dir = b.dataset.d; drawMovers(); }));
+  $$('#win button').forEach((b) => b.addEventListener('click', () => { $$('#win button').forEach((x) => x.setAttribute('aria-pressed', x === b)); win = b.dataset.w; drawMovers(); }));
+  $('#openForm').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#openIn').value.trim(); if (!isAddr(v)) { toast('Paste a valid Solana coin address.', 'warn'); return; } openCoin(v, true); });
+
+  // coin view
+  async function openCoin(addr, push) {
+    const cv = $('#cv'); cv.classList.remove('hide');
+    if (push) { try { history.pushState(null, '', '?coin=' + addr); } catch {} }
+    cv.innerHTML = `<div class="panel" style="grid-column:1/-1;text-align:center;padding:50px"><div class="skel" style="height:14px;width:200px;margin:0 auto"></div></div>`;
+    cv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const [p, chk] = await Promise.all([dex.coin(addr), mintCheck(addr).catch(() => null)]);
+    const c = coinView(p);
+    if (!c) { cv.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>No market for this coin yet</h3><p>It may be too new, or not trading on any pool. You can still post a buy offer for it.</p><a class="btn btn-sm btn-buy" href="index.html?side=buy&coin=${addr}">Post a buy offer</a></div>`; return; }
+    const sizes = [10000, 50000, 100000, 250000];
+    cv.innerHTML = `
+      <div class="stack">
+        <div class="row between" style="flex-wrap:wrap;gap:14px">
+          <div class="cv-head">${coinImg(c)}<div><h2>${esc(c.symbol)}</h2><span class="muted">${esc(c.name)}</span></div></div>
+          <div class="row" style="gap:14px"><div style="text-align:right"><div class="mono" style="font-size:30px;font-weight:700">$${fmtPx(c.usd)}</div><span class="chip ${(c.ch24 ?? 0) >= 0 ? 'up' : 'down'}">${(c.ch24 ?? 0) >= 0 ? '▲' : '▼'} ${pct(Math.abs(c.ch24 ?? 0), 2, false)} 24h</span></div><a class="icon-btn" href="markets.html" id="cvClose" aria-label="Close coin">✕</a></div>
+        </div>
+        <div class="chart"><iframe title="${esc(c.symbol)} chart" src="https://dexscreener.com/solana/${esc(c.pair || c.addr)}?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe></div>
+        <span class="hint" style="text-align:right">Live chart by DexScreener</span>
+        <div class="panel"><div class="panel-h"><div><span class="lbl">On TradeOff</span></div><a class="link" href="index.html?coin=${c.addr}">See all on the board →</a></div>
+          <div class="empty" style="padding:22px"><p style="margin:0">No bags for $${esc(c.symbol)} on TradeOff yet. Be the first: sell or buy with the box on the right.</p></div></div>
+      </div>
+      <div class="stack">
+        <div class="panel kvl"><span class="lbl">Market</span><div style="margin-top:8px">
+          <div class="r"><span class="muted">Price</span><b>$${fmtPx(c.usd)}</b></div>
+          <div class="r"><span class="muted">Price in SOL</span><b>${fmtPx(c.sol)}</b></div>
+          <div class="r"><span class="muted">Market cap</span><b>${fmtUsd(c.mcap)}</b></div>
+          <div class="r"><span class="muted">Volume 24h</span><b>${fmtUsd(c.vol24)}</b></div>
+          <div class="r"><span class="muted">Pool liquidity</span><b>${fmtUsd(c.liq)}</b></div>
+          <div class="r"><span class="muted">Pool</span><b>${esc(c.dex === 'pumpswap' ? 'PumpSwap' : c.dex)}</b></div>
+          <div class="r"><span class="muted">Freeze authority</span><b class="${chk?.freezable ? 'goldc' : 'up'}">${chk ? (chk.freezable ? 'Freezable' : 'None') : '–'}</b></div>
+        </div></div>
+        <div class="panel kvl dump"><span class="lbl">Dump it into this pool</span><div style="margin-top:8px">
+          ${sizes.map((s) => `<div class="r"><span class="muted">Sell ${fmtUsd(s)}</span><b>${pct(impact(c.liq, s)?.chart, 1)}</b></div>`).join('')}
+          <div class="r us"><span class="muted">On TradeOff, any size</span><b>0.0%</b></div></div></div>
+        <div class="panel"><span class="lbl">Trade on TradeOff</span>
+          ${chk && !chk.ok ? `<p class="hint bad" style="margin:12px 0 0">${esc(chk.reason)}</p>` : `
+          <div class="sides" style="margin:12px 0 14px"><a class="btn btn-sell" href="index.html?side=sell&coin=${c.addr}">Sell</a><a class="btn btn-buy" href="index.html?side=buy&coin=${c.addr}">Buy</a></div>
+          <p class="muted" style="margin:0;font-size:14px">Sell your $${esc(c.symbol)} bag to a buyer, or name your price and let holders sell into it.</p>`}
+          <div class="ca" style="margin-top:16px"><span class="v">${short(c.addr, 6)}</span><button class="btn btn-sm" id="cvCopy" type="button">Copy CA</button></div>
+          <div class="row between" style="margin-top:12px"><span class="muted" style="font-size:14px">Bags on TradeOff</span><span class="mono dim">none yet</span></div>
+        </div>
+      </div>`;
+    $('#cvCopy').onclick = () => copyText(c.addr, 'CA copied');
+    document.title = `$${c.symbol} · Markets · TradeOff`;
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="?coin="]'); if (!a) return;
+    e.preventDefault(); openCoin(new URLSearchParams(a.getAttribute('href')).get('coin'), true);
+  });
+
+  // dump calculator (log sliders)
+  const logv = (v, lo, hi) => Math.round(Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * (v / 100)) / 1000) * 1000;
+  function calc() {
+    const liq = logv(+$('#cLiq').value, 10000, 20000000), size = Math.max(1000, logv(+$('#cSize').value, 1000, 2000000));
+    $('#cLiqV').textContent = fmtUsd(liq); $('#cSizeV').textContent = fmtUsd(size);
+    const im = impact(liq, size);
+    $('#cChart').textContent = pct(im.chart); $('#cGets').textContent = pct(im.sellerGets); $('#cWalk').textContent = fmtUsd(size * (1 + im.sellerGets / 100));
+    $('#cMeter').style.width = Math.min(100, -im.chart) + '%';
+  }
+  ['#cLiq', '#cSize'].forEach((s) => $(s).addEventListener('input', calc)); calc();
+
+  load();
+  const pre = qs('coin'); if (pre && isAddr(pre)) openCoin(pre, false);
+});
+</script>
+</body>
+</html>
